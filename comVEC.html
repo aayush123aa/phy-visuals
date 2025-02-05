@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COM Visualization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid black;
+      margin: 20px;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    label, input, button {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Center of Mass Visualization</h1>
+  <div class="controls">
+    <label for="mass">Mass:</label>
+    <input type="number" id="mass" step="0.1" placeholder="Enter mass" required>
+    <label for="x">X-coordinate:</label>
+    <input type="number" id="x" placeholder="Enter X" required>
+    <label for="y">Y-coordinate:</label>
+    <input type="number" id="y" placeholder="Enter Y" required>
+    <button id="addMass">Add Point Mass</button>
+  </div>
+  <canvas id="canvas1" width="600" height="600"></canvas>
+  <canvas id="canvas2" width="600" height="600"></canvas>
+
+  <script>
+    const canvas1 = document.getElementById("canvas1");
+    const canvas2 = document.getElementById("canvas2");
+    const ctx1 = canvas1.getContext("2d");
+    const ctx2 = canvas2.getContext("2d");
+    const width = canvas1.width;
+    const height = canvas1.height;
+    const scale = 20; // Scaling factor for better visualization
+    const pointMasses = [];
+    let totalMass = 0;
+    let comX = 0, comY = 0;
+
+    // Draw axes for a graph
+    function drawAxes(ctx) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.beginPath();
+      ctx.strokeStyle = "#ccc";
+
+      // X-axis
+      ctx.moveTo(0, height - 10); 
+      ctx.lineTo(width, height - 10);
+
+      // Y-axis
+      ctx.moveTo(10, 0);
+      ctx.lineTo(10, height);
+
+      ctx.stroke();
+    }
+
+    // Draw a point
+    function drawPoint(ctx, x, y, color = "red") {
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // Draw vector arrow
+    function drawArrow(ctx, fromX, fromY, toX, toY, color = "blue") {
+      const headLength = 10;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(
+        toX - headLength * Math.cos(angle - Math.PI / 6),
+        toY - headLength * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        toX - headLength * Math.cos(angle + Math.PI / 6),
+        toY - headLength * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // Update and draw graphs
+    function updateGraphs() {
+      if (pointMasses.length === 0) return;
+
+      let weightedSumX = 0, weightedSumY = 0;
+      totalMass = 0;
+
+      pointMasses.forEach(({ mass, x, y }) => {
+        totalMass += mass;
+        weightedSumX += mass * x;
+        weightedSumY += mass * y;
+      });
+
+      comX = weightedSumX / totalMass;
+      comY = weightedSumY / totalMass;
+
+      const comTimesMassX = weightedSumX * scale;
+      const comTimesMassY = weightedSumY * scale;
+
+      // Graph 1: COM * Total Mass
+      drawAxes(ctx1);
+      pointMasses.forEach(({ x, y }) =>
+        drawPoint(ctx1, x * scale + 10, height - (y * scale + 10), "red")
+      );
+      drawArrow(ctx1, 10, height - 10, comTimesMassX + 10, height - (comTimesMassY + 10), "blue");
+
+      // Graph 2: Center of Mass
+      drawAxes(ctx2);
+      pointMasses.forEach(({ x, y }) =>
+        drawPoint(ctx2, x * scale + 10, height - (y * scale + 10), "red")
+      );
+      drawArrow(ctx2, 10, height - 10, comX * scale + 10, height - (comY * scale + 10), "green");
+    }
+
+    document.getElementById("addMass").addEventListener("click", () => {
+      const mass = parseFloat(document.getElementById("mass").value);
+      const x = parseFloat(document.getElementById("x").value);
+      const y = parseFloat(document.getElementById("y").value);
+
+      if (isNaN(mass) || isNaN(x) || isNaN(y)) {
+        alert("Please enter valid mass and coordinates.");
+        return;
+      }
+
+      pointMasses.push({ mass, x, y });
+      updateGraphs();
+    });
+
+    // Initial setup
+    drawAxes(ctx1);
+    drawAxes(ctx2);
+  </script>
+</body>
+</html>

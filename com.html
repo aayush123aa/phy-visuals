@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Center of Mass Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    #canvas {
+      border: 1px solid black;
+      margin: 20px auto;
+      display: block;
+    }
+
+    .controls {
+      margin: 10px 0;
+    }
+
+    .controls input {
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Center of Mass Visualizer</h1>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <div class="controls">
+    <input type="number" id="mass" placeholder="Mass" step="0.1">
+    <input type="number" id="x" placeholder="X Coordinate">
+    <input type="number" id="y" placeholder="Y Coordinate">
+    <button onclick="addPointMass()">Add Point Mass</button>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let pointMasses = []; // Stores all point masses
+
+    function drawCartesianPlane() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw x and y axes
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.strokeStyle = 'gray';
+      ctx.stroke();
+    }
+
+    function calculateCenterOfMass() {
+      let totalMass = 0;
+      let centerX = 0;
+      let centerY = 0;
+
+      pointMasses.forEach(({ mass, x, y }) => {
+        totalMass += mass;
+        centerX += mass * x;
+        centerY += mass * y;
+      });
+
+      if (totalMass === 0) return { x: 0, y: 0, totalMass: 0 };
+
+      return {
+        x: centerX / totalMass,
+        y: centerY / totalMass,
+        totalMass
+      };
+    }
+
+    function drawPointMasses() {
+      pointMasses.forEach(({ x, y, mass }) => {
+        ctx.beginPath();
+        ctx.arc(
+          canvas.width / 2 + x * 10, // Scale by 10 for visualization
+          canvas.height / 2 - y * 10,
+          Math.log(mass + 1) * 5, // Radius scales logarithmically with mass
+          0,
+          Math.PI * 2
+        );
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+      });
+    }
+
+    function drawCenterOfMass() {
+      const { x, y, totalMass } = calculateCenterOfMass();
+
+      ctx.beginPath();
+      ctx.arc(
+        canvas.width / 2 + x * 10,
+        canvas.height / 2 - y * 10,
+        10,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle = 'red';
+      ctx.fill();
+
+      ctx.font = '14px Arial';
+      ctx.fillText(
+        `COM * Total Mass: (${(x * totalMass).toFixed(2)}, ${(y * totalMass).toFixed(2)})`,
+        10,
+        canvas.height - 10
+      );
+    }
+
+    function addPointMass() {
+      const mass = parseFloat(document.getElementById('mass').value);
+      const x = parseFloat(document.getElementById('x').value);
+      const y = parseFloat(document.getElementById('y').value);
+
+      if (!isNaN(mass) && !isNaN(x) && !isNaN(y) && mass > 0) {
+        pointMasses.push({ mass, x, y });
+        updateVisualization();
+      } else {
+        alert('Please enter valid inputs for mass, x, and y.');
+      }
+    }
+
+    function updateVisualization() {
+      drawCartesianPlane();
+      drawPointMasses();
+      drawCenterOfMass();
+    }
+
+    drawCartesianPlane();
+  </script>
+</body>
+</html>
